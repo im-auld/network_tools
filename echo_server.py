@@ -1,5 +1,6 @@
 #! usr/bin/python
 import socket
+import sys
 
 
 def echo_server():
@@ -7,17 +8,20 @@ def echo_server():
     SERVER_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     SERVER_SOCKET.bind(('127.0.0.1', 50000))
     print('Waiting for message...')
-    while True:
-        SERVER_SOCKET.listen(1)
-        conn, addr = SERVER_SOCKET.accept()
-        received_msg = conn.recv(32)
-        if received_msg != '^D':
-            conn.sendall(received_msg)
-        else:
-            break
-        conn.close()
+    final_output = ''
+    done = False
+    buffsize = 32
+    SERVER_SOCKET.listen(1)
+    conn, addr = SERVER_SOCKET.accept()
+    while not done:
+        msg_part = conn.recv(buffsize)
+        final_output += msg_part
+        if len(msg_part) < buffsize:
+            done = True
+    conn.sendall(final_output)
+    conn.close()
     SERVER_SOCKET.close()
-    return received_msg
+    return final_output
 
 
 if __name__ == '__main__':

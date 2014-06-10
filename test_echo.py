@@ -1,12 +1,9 @@
 import pytest
-from os import urandom
-from subprocess import call
 from echo_client import echo_client
-from echo_server import echo_server
 
-tests = ['Hello, world', u'Hello, world', urandom(32)]
 
-def test_echo_server():
-    for test in tests:
-        assert echo_client(test) == test
-    echo_client('^D')
+def test_echo_client_and_server():
+    our_test_val = "oiwejfojsoehfoihgioheiughirhgiehroghwoifwoeifjoiwej\
+    foijweoifjowej918249294u293hiuhfowjeoifj"
+    print our_test_val + "this was our print statement"
+    assert echo_client(our_test_val) == our_test_val
