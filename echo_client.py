@@ -9,11 +9,20 @@ def echo_client(message):
     if type(message) == unicode:
         message = message.encode('UTF-8')
     CLIENT_SOCKET.sendall(message)
+   # if not sys.getsizeof(message) % 32:
+   #             CLIENT_SOCKET.send()
     CLIENT_SOCKET.shutdown(socket.SHUT_WR)
-    received_msg = CLIENT_SOCKET.recv(32)
+    buffsize = 32
+    done = False
+    complete_msg = ''
+    while not done:
+        rcvd_msg_part = CLIENT_SOCKET.recv(buffsize)
+        complete_msg += rcvd_msg_part
+        if len(rcvd_msg_part) < buffsize:
+            done = True
     CLIENT_SOCKET.close()
-    print(received_msg)
-    return received_msg
+    print(complete_msg)
+    return complete_msg
 
 if __name__ == '__main__':
     try:
