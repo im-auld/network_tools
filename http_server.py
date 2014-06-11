@@ -1,9 +1,18 @@
 import socket
+from HTTPExceptions import HTTP400Error, HTTP404Error, HTTP405Error
 
-def request_parser(request):
-  #  import pdb; pdb.set_trace()
-    request = request.replace("\r\n", " ").split(" ")
-    if len(request) <= 5:
+def request_parser(raw_request):
+    import pdb; pdb.set_trace()
+    raw_request = raw_request.split('\r\n')
+    keys = ('method', 'URI', 'protocol')
+    request = dict(zip(keys, raw_request[0].split()))
+    for element in raw_request[1:]:
+        if element.lower().startswith('host:'):
+            request['host'] = element.split()[1]
+            break
+    return request if len(request) == 4 else 
+    
+    if len(request) != 3:
         raise IndexError
     method, URI, protocol, host_key, host = request[:5]
     if method != "GET":
