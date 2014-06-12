@@ -45,8 +45,7 @@ def resource_locator(uri):
     dir_to_check = root + uri
     if os.path.isdir(dir_to_check):
         dir_contents = os.listdir(dir_to_check)
-        return dir_contents
-        #return directory_formatter(dir_contents)
+        return directory_formatter(dir_contents)
     else:
         open_file = open(dir_to_check, 'r+')
         file_contents = open_file.read()
@@ -73,10 +72,10 @@ def response_builder(response, content):
 
 
 def directory_formatter(content):
-    output_list = "<ul>"
+    output_list = "<html><ul>"
     for item in content:
         output_list += '<li><a href="{}">{}</a></li>'.format(item, item)
-    output_list += "</ul>"
+    output_list += "</ul></html>"
     return output_list
 
 
