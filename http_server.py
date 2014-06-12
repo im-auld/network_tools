@@ -1,5 +1,8 @@
 import socket
-from HTTPExceptions import HTTPException , HTTP400Error, HTTP404Error, HTTP405Error
+import os
+import mimetypes
+import pdb
+from HTTPExceptions import HTTPException, HTTP400Error, HTTP404Error, HTTP405Error
 
 
 def request_parser(raw_request):
@@ -11,41 +14,71 @@ def request_parser(raw_request):
             request['host'] = element.split()[1]
             break
     return request
-    
+
+
 def check_request_method(request):
     if request['method'] != 'GET':
         raise HTTP405Error('Method Not Allowed')
-    
+
+
 def check_request_URI(request):
-    if not request['URI'].startswith('/'):
+    if ".." in request['URI']:
         raise HTTP400Error('Bad Request')
-    
+    if not request['URI'].startswith('/'):
+    ##need to add something to check if this is an existing directory/filename
+        raise HTTP400Error('Bad Request')
+
+
 def check_request_protocol(request):
     if request['protocol'] != "HTTP/1.1":
         raise HTTP400Error('Bad Request')
-    
+
+
 def check_request_host(request):
     if 'host' not in request:
         raise HTTP400Error('Bad Request')
-        
-def request_validator(request):
+
+
+def resource_locator(uri):
+    root = os.path.abspath(os.path.dirname(__file__))
+    root = os.path.join(root, "webroot")
+    dir_to_check = root + uri
+    if os.path.isdir(dir_to_check):
+        dir_contents = os.listdir(dir_to_check)
+        return dir_contents
+        #return directory_formatter(dir_contents)
+    else:
+        open_file = open(dir_to_check, 'r+')
+        file_contents = open_file.read()
+        return file_contents
+
+
+def request_validator(request, content=""):
     try:
         check_request_method(request)
         check_request_URI(request)
         check_request_protocol(request)
         check_request_host(request)
-        return ('200', 'OK', 'This is a message')
+        return ('200', 'OK', '{}'.format(content))
     except HTTPException as err:
         return (err.code, err.message, '<h1>{} - {}</h1>'.format(err.code, err.message))
-    # except HTTP404Error as err:
-    #     response = RESPONSE.format(404, err.message, '')
-    # except HTTP405Error as err:
-    #     response = RESPONSE.format(405, err.message, '')
-        
-def response_builder(response):
-    template = '\r\n'.join(['HTTP/1.1 {} {}', 'Content-Type: text/plain', '', '{}'])
+
+
+def response_builder(response, content):
+    mimetype = mimetypes.guess_type(content)[0]
+    content_type = 'Content-Type: {}'.format(mimetype)
+    template = '\r\n'.join(['HTTP/1.1 {} {}', content_type, '', '{}'])
     return template.format(*response)
-    
+
+
+def directory_formatter(content):
+    output_list = "<ul>"
+    for item in content:
+        output_list += '<li><a href="{}">{}</a></li>'.format(item, item)
+    output_list += "</ul>"
+    return output_list
+
+
 def http_server():
     SERVER_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
     SERVER_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -63,9 +96,9 @@ def http_server():
             if len(msg_part) < buffsize:
                 done = True
         request = request_parser(final_output)
-        #import pdb; pdb.set_trace()
-        response = request_validator(request)
-        response = response_builder(response)
+        content = resource_locator(request["URI"])
+        response = request_validator(request, content)
+        response = response_builder(response, request["URI"])
         conn.sendall(response)
         conn.close()
     SERVER_SOCKET.close()

@@ -1,5 +1,7 @@
 import pytest
-from http_server import http_server, request_parser, request_validator, response_builder
+from http_server import (http_server, request_parser,
+                        request_validator, response_builder,
+                        resource_locator)
 from echo_client import echo_client
 
 request_200 = """GET / HTTP/1.1\r\nHost: 127.0.0.1:50000
@@ -27,6 +29,7 @@ Accept-Encoding: gzip, deflate
 Connection: keep-alive
 Cache-Control: max-age=0"""
 
+
 def test_request_parser():
     request = request_parser(request_200)
     print(request)
@@ -34,40 +37,42 @@ def test_request_parser():
     assert request['URI'] == '/'
     assert request['protocol'] == 'HTTP/1.1'
     assert request['host'] == '127.0.0.1:50000'
-    
+
+
 def test_200_response():
     request = request_parser(request_200)
     response = request_validator(request)
     assert response[0] == '200'
     assert response[1] == 'OK'
     assert response[2] == 'This is a message'
-    
+
+
 def test_400_response():
     request = request_parser(request_400)
     response = request_validator(request)
     assert response[0] == '400'
     assert response[1] == 'Bad Request'
     assert response[2] == '<h1>400 - Bad Request</h1>'
-    
+
+
 def test_405_response():
     request = request_parser(request_405)
     response = request_validator(request)
     assert response[0] == '405'
     assert response[1] == 'Method Not Allowed'
     assert response[2] == '<h1>405 - Method Not Allowed</h1>'
-    
+
+
 def test_response_builder():
     request = request_parser(request_200)
     response = request_validator(request)
     response = response_builder(response)
     assert response == 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nThis is a message'
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+def test_resource_locator():
+    resource = resource_locator("/make_time.py")
+    assert resource == "make_time.py"
+
+    resource = resource_locator("/images")
+    assert resource == ["JPEG_example.jpg", "sample_1.png", "Sample_Scene_Balls.jpg"]
