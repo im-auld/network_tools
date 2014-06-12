@@ -25,7 +25,6 @@ def check_request_URI(request):
     if ".." in request['URI']:
         raise HTTP400Error('Bad Request')
     if not request['URI'].startswith('/'):
-    ##need to add something to check if this is an existing directory/filename
         raise HTTP400Error('Bad Request')
 
 
@@ -43,6 +42,8 @@ def resource_locator(uri):
     root = os.path.abspath(os.path.dirname(__file__))
     root = os.path.join(root, "webroot")
     dir_to_check = root + uri
+    #if dir_to_check not in os.listdir(root)
+      #  raise HTTP404Error('File Not Found')
     if os.path.isdir(dir_to_check):
         dir_contents = os.listdir(dir_to_check)
         return directory_formatter(dir_contents)
@@ -60,7 +61,7 @@ def request_validator(request, content=""):
         check_request_host(request)
         return ('200', 'OK', '{}'.format(content))
     except HTTPException as err:
-        content = '<h1>{} - {}</h1>'.format(err.code, err.message)
+        content = '<html><h1>{} - {}</h1></html>'.format(err.code, err.message)
         return (err.code, err.message, content)
 
 
