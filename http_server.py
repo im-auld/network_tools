@@ -76,14 +76,6 @@ def directory_formatter(content):
     return output_list
 
 
-def file_formatter(content):
-    file_format = mimetypes.guess_type(content)[0]
-    #if file_format.split("/")[0] == "image":
-    #    '<img src="{file_name}" alt="{file_name}">'.format(file_name=content)
-    #else:
-    #    return "<body> 'I am a random placeholder' </body>"
-
-
 def http_server():
     SERVER_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
     SERVER_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
