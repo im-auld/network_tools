@@ -53,10 +53,10 @@ def resource_locator(uri):
 
 def resource_formatter(content):
     if isinstance(content, list):
-        return directory_formatter(content)
+        return content
+       # return directory_formatter(content)
     else:
         return content
-        #file_formatter(content)
 
 
 def request_validator(request, content=""):
