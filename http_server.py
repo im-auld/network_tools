@@ -1,8 +1,8 @@
 import socket
 import os
 import mimetypes
-import pdb
-from HTTPExceptions import HTTPException, HTTP400Error, HTTP404Error, HTTP405Error
+from HTTPExceptions import HTTPException
+from HTTPExceptions import HTTP400Error, HTTP404Error, HTTP405Error
 
 
 def request_parser(raw_request):
@@ -61,7 +61,8 @@ def request_validator(request, content=""):
         check_request_host(request)
         return ('200', 'OK', '{}'.format(content))
     except HTTPException as err:
-        return (err.code, err.message, '<h1>{} - {}</h1>'.format(err.code, err.message))
+        content = '<h1>{} - {}</h1>'.format(err.code, err.message)
+        return (err.code, err.message, content)
 
 
 def response_builder(response, content):
