@@ -2,8 +2,7 @@ import socket
 import os
 import mimetypes
 import pdb
-from HTTPExceptions import HTTPException , HTTP400Error, HTTP404Error, HTTP405Error
-
+from HTTPExceptions import HTTPException, HTTP400Error, HTTP404Error, HTTP405Error
 
 
 def request_parser(raw_request):
@@ -23,7 +22,8 @@ def check_request_method(request):
 
 
 def check_request_URI(request):
-    if not request['URI'].startswith('/'): ##need to add something to check if this is an existing directory/filename
+    if not request['URI'].startswith('/'):
+    ##need to add something to check if this is an existing directory/filename
         raise HTTP400Error('Bad Request')
 
 
@@ -35,6 +35,28 @@ def check_request_protocol(request):
 def check_request_host(request):
     if 'host' not in request:
         raise HTTP400Error('Bad Request')
+
+
+def resource_locator(uri):
+    root = os.path.abspath(os.path.dirname(__file__))
+    root = os.path.join(root, "webroot")
+    dir_to_check = root + uri
+    if os.path.isdir(dir_to_check):
+        dir_contents = os.listdir(dir_to_check)
+        return dir_contents
+    else:
+        #return dir_to_check
+        open_file = open(dir_to_check, 'r+')
+        file_contents = open_file.read()
+        return file_contents
+
+
+def resource_formatter(content):
+    if isinstance(content, list):
+        return directory_formatter(content)
+    else:
+        return content
+        #file_formatter(content)
 
 
 def request_validator(request, content=""):
@@ -55,38 +77,20 @@ def response_builder(response, content):
     return template.format(*response)
 
 
-def resource_locator(uri):
-    root = os.path.abspath(os.path.dirname(__file__))
-    root = os.path.join(root, "webroot")
-    dir_to_check = root + uri
-    if os.path.isdir(dir_to_check):
-        dir_contents = os.listdir(dir_to_check)
-        return dir_contents
-    else:
-        #return dir_to_check
-        return os.path.basename(dir_to_check)
-
-
 def directory_formatter(content):
     output_list = "<ul>"
     for item in content:
         output_list += "<li>{}</li>".format(item)
     output_list += "</ul>"
+    return output_list
 
 
 def file_formatter(content):
     file_format = mimetypes.guess_type(content)[0]
-    if file_format.split("/")[0] == "image":
-        return '<img src="{file_name}" alt="{file_name}">'.format(file_name=content)
-    else:
-        return "<body> 'I am a random placeholder' </body>"
-
-
-def resource_formatter(content):
-    if isinstance(content, list):
-        return directory_formatter(content)
-    else:
-        return file_formatter(content)
+    #if file_format.split("/")[0] == "image":
+    #    '<img src="{file_name}" alt="{file_name}">'.format(file_name=content)
+    #else:
+    #    return "<body> 'I am a random placeholder' </body>"
 
 
 def http_server():
@@ -106,9 +110,10 @@ def http_server():
             if len(msg_part) < buffsize:
                 done = True
         request = request_parser(final_output)
-        content = resource_formatter(resource_locator(request["URI"]))
+        content = resource_locator(request["URI"])
+        content = resource_formatter(content)
         response = request_validator(request, content)
-        response = response_builder(response, content)
+        response = response_builder(response, request["URI"])
         conn.sendall(response)
         conn.close()
     SERVER_SOCKET.close()
