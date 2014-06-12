@@ -43,20 +43,11 @@ def resource_locator(uri):
     dir_to_check = root + uri
     if os.path.isdir(dir_to_check):
         dir_contents = os.listdir(dir_to_check)
-        return dir_contents
+        return directory_formatter(dir_contents)
     else:
-        #return dir_to_check
         open_file = open(dir_to_check, 'r+')
         file_contents = open_file.read()
         return file_contents
-
-
-def resource_formatter(content):
-    if isinstance(content, list):
-        return content
-       # return directory_formatter(content)
-    else:
-        return content
 
 
 def request_validator(request, content=""):
@@ -111,7 +102,6 @@ def http_server():
                 done = True
         request = request_parser(final_output)
         content = resource_locator(request["URI"])
-        content = resource_formatter(content)
         response = request_validator(request, content)
         response = response_builder(response, request["URI"])
         conn.sendall(response)
