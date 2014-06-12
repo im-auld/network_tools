@@ -1,12 +1,8 @@
 import socket
-from HTTPExceptions import HTTP400Error, HTTP404Error, HTTP405Error
-
-
-RESPONSE = '\r\n'.join(['HTTP/1.1 {} {}', 'Content-Type: text/plain', '', '{}'])
+from HTTPExceptions import HTTPException , HTTP400Error, HTTP404Error, HTTP405Error
 
 
 def request_parser(raw_request):
-    #import pdb; pdb.set_trace()
     raw_request = raw_request.split('\r\n')
     keys = ('method', 'URI', 'protocol')
     request = dict(zip(keys, raw_request[0].split()))
@@ -14,10 +10,7 @@ def request_parser(raw_request):
         if element.lower().startswith('host:'):
             request['host'] = element.split()[1]
             break
-    if len(request) == 4:
-        return request
-    else:
-        raise HTTP400Error('Bad Request')
+    return request
     
 def check_request_method(request):
     if request['method'] != 'GET':
@@ -34,7 +27,25 @@ def check_request_protocol(request):
 def check_request_host(request):
     if 'host' not in request:
         raise HTTP400Error('Bad Request')
-
+        
+def request_validator(request):
+    try:
+        check_request_method(request)
+        check_request_URI(request)
+        check_request_protocol(request)
+        check_request_host(request)
+        return ('200', 'OK', 'This is a message')
+    except HTTPException as err:
+        return (err.code, err.message, '<h1>{} - {}</h1>'.format(err.code, err.message))
+    # except HTTP404Error as err:
+    #     response = RESPONSE.format(404, err.message, '')
+    # except HTTP405Error as err:
+    #     response = RESPONSE.format(405, err.message, '')
+        
+def response_builder(response):
+    template = '\r\n'.join(['HTTP/1.1 {} {}', 'Content-Type: text/plain', '', '{}'])
+    return template.format(*response)
+    
 def http_server():
     SERVER_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
     SERVER_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -51,23 +62,12 @@ def http_server():
             final_output += msg_part
             if len(msg_part) < buffsize:
                 done = True
-        try:
-            request = request_parser(final_output)
-            check_request_method(request)
-            check_request_URI(request)
-            check_request_protocol(request)
-            check_request_host(request)
-            response = RESPONSE.format('200', 'OK', 'This a message')
-        except HTTP400Error as err:
-            response = RESPONSE.format(400, err.message, '')
-        except HTTP404Error as err:
-            response = RESPONSE.format(404, err.message, '')
-        except HTTP405Error as err:
-            response = RESPONSE.format(405, err.message, '')
+        request = request_parser(final_output)
+        #import pdb; pdb.set_trace()
+        response = request_validator(request)
+        response = response_builder(response)
         conn.sendall(response)
         conn.close()
-       # if final_output:
-        #    break
     SERVER_SOCKET.close()
     return final_output
 
