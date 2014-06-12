@@ -1,6 +1,7 @@
 import socket
 import os
 import mimetypes
+import pdb
 from HTTPExceptions import HTTPException , HTTP400Error, HTTP404Error, HTTP405Error
 
 
@@ -22,7 +23,7 @@ def check_request_method(request):
 
 
 def check_request_URI(request):
-    if not request['URI'].startswith('/'):
+    if not request['URI'].startswith('/'): ##need to add something to check if this is an existing directory/filename
         raise HTTP400Error('Bad Request')
 
 
@@ -47,8 +48,10 @@ def request_validator(request, content=""):
         return (err.code, err.message, '<h1>{} - {}</h1>'.format(err.code, err.message))
 
 
-def response_builder(response):
-    template = '\r\n'.join(['HTTP/1.1 {} {}', 'Content-Type: text/plain', '', '{}'])
+def response_builder(response, content):
+    mimetype = mimetypes.guess_type(content)[0]
+    content_type = 'Content-Type: {}'.format(mimetype)
+    template = '\r\n'.join(['HTTP/1.1 {} {}', content_type, '', '{}'])
     return template.format(*response)
 
 
@@ -60,6 +63,7 @@ def resource_locator(uri):
         dir_contents = os.listdir(dir_to_check)
         return dir_contents
     else:
+        #return dir_to_check
         return os.path.basename(dir_to_check)
 
 
@@ -74,6 +78,8 @@ def file_formatter(content):
     file_format = mimetypes.guess_type(content)[0]
     if file_format.split("/")[0] == "image":
         return '<img src="{file_name}" alt="{file_name}">'.format(file_name=content)
+    else:
+        return "<body> 'I am a random placeholder' </body>"
 
 
 def resource_formatter(content):
@@ -81,6 +87,7 @@ def resource_formatter(content):
         return directory_formatter(content)
     else:
         return file_formatter(content)
+
 
 def http_server():
     SERVER_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
@@ -101,7 +108,7 @@ def http_server():
         request = request_parser(final_output)
         content = resource_formatter(resource_locator(request["URI"]))
         response = request_validator(request, content)
-        response = response_builder(response)
+        response = response_builder(response, content)
         conn.sendall(response)
         conn.close()
     SERVER_SOCKET.close()
