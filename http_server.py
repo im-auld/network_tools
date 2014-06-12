@@ -22,6 +22,8 @@ def check_request_method(request):
 
 
 def check_request_URI(request):
+    if ".." in request['URI']:
+        raise HTTP400Error('Bad Request')
     if not request['URI'].startswith('/'):
     ##need to add something to check if this is an existing directory/filename
         raise HTTP400Error('Bad Request')
@@ -43,7 +45,8 @@ def resource_locator(uri):
     dir_to_check = root + uri
     if os.path.isdir(dir_to_check):
         dir_contents = os.listdir(dir_to_check)
-        return directory_formatter(dir_contents)
+        return dir_contents
+        #return directory_formatter(dir_contents)
     else:
         open_file = open(dir_to_check, 'r+')
         file_contents = open_file.read()
@@ -71,7 +74,7 @@ def response_builder(response, content):
 def directory_formatter(content):
     output_list = "<ul>"
     for item in content:
-        output_list += "<li>{}</li>".format(item)
+        output_list += '<li><a href="{}">{}</a></li>'.format(item, item)
     output_list += "</ul>"
     return output_list
 
