@@ -1,6 +1,7 @@
 import socket
 import os
 import mimetypes
+import SocketServer
 from HTTPExceptions import HTTPException
 from HTTPExceptions import HTTP400Error, HTTP404Error, HTTP405Error
 
@@ -85,17 +86,12 @@ def directory_formatter(content, dir_uri):
     return output_list
 
 
-def http_server():
-    SERVER_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
-    SERVER_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    SERVER_SOCKET.bind(('127.0.0.1', 50000))
+def echo(conn, addr):
     buffsize = 32
-    SERVER_SOCKET.listen(1)
     print('Waiting for message...')
     while True:
         final_output = ''
         done = False
-        conn, addr = SERVER_SOCKET.accept()
         while not done:
             msg_part = conn.recv(buffsize)
             final_output += msg_part
@@ -107,9 +103,23 @@ def http_server():
         response = response_builder(response, request["URI"])
         conn.sendall(response)
         conn.close()
+        break
+
+
+def http_server():
+    SERVER_SOCKET = socket.socket(socket.AF_INET, socket.SOCK_STREAM, socket.IPPROTO_TCP)
+    SERVER_SOCKET.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    SERVER_SOCKET.bind(('127.0.0.1', 50000))
+    SERVER_SOCKET.listen(1)
+    final_output = echo(SERVER_SOCKET.accept())
     SERVER_SOCKET.close()
     return final_output
 
 
 if __name__ == '__main__':
-    http_server()
+    from gevent.server import StreamServer
+    from gevent.monkey import patch_all
+    patch_all()
+    server = StreamServer(('127.0.0.1', 50000), echo)
+    print('Starting echo server on port 50000')
+    server.serve_forever()
